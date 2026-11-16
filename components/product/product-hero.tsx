@@ -3,7 +3,7 @@
 import Link from "@/components/i18n/link"
 import { useRouter } from "@/components/i18n/provider"
 import { useState } from "react"
-import { BadgeCheck, Check, MapPin, RotateCcw, ShieldCheck, Truck, Zap } from "lucide-react"
+import { BadgeCheck, Check, RotateCcw, ShieldCheck, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { QuantityStepper } from "@/components/shared/quantity-stepper"
 import { useCart } from "@/stores"
@@ -12,6 +12,8 @@ import { discountPercent, formatCount } from "@/lib/format"
 import { available, defaultVariant, optionGroups, resolveVariant } from "@/lib/product"
 import { cn } from "@/lib/utils"
 import { ProductImage } from "./product-image"
+import { DeliveryEstimate } from "./delivery-estimate"
+import { StockAlertButton } from "./stock-alert-button"
 import { BrandMark, Price, ProductBadges, Rating } from "./primitives"
 import { AddToCartButton, CompareButton, WishlistButton } from "./product-actions"
 import { useDict } from "@/components/i18n/provider"
@@ -181,6 +183,11 @@ export function ProductHero({ product }: { product: ProductWithRelations }) {
               <Zap /> {t.product.buyNow}
             </Button>
           </div>
+          {soldOut && (
+            <div className="mt-2">
+              <StockAlertButton productId={product.id} slug={product.slug} />
+            </div>
+          )}
           <div className="mt-3 flex items-center gap-1">
             <WishlistButton productId={product.id} productName={product.name} variant="outline" className="h-9 border-0 px-2 text-muted-foreground shadow-none" />
             <CompareButton productId={product.id} />
@@ -188,16 +195,7 @@ export function ProductHero({ product }: { product: ProductWithRelations }) {
         </div>
 
         <div className="mt-6 divide-y rounded-xl border text-sm">
-          <div className="flex items-start gap-3 p-4">
-            <Truck className="mt-0.5 size-5 shrink-0 text-primary" />
-            <div>
-              <p className="font-medium">{t.product.delivery}</p>
-              <p className="text-muted-foreground">{t.product.deliveryEta}</p>
-              <button type="button" className="mt-1 inline-flex items-center gap-1 text-xs text-primary hover:underline">
-                <MapPin className="size-3" /> {t.product.changeLocation}
-              </button>
-            </div>
-          </div>
+          <DeliveryEstimate />
           <div className="flex items-start gap-3 p-4">
             <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" />
             <p>

@@ -6,7 +6,7 @@ import { CreditCard, ExternalLink, LayoutDashboard, Package, Users, MessageSquar
 import { cn } from "@/lib/utils"
 import { useSessionUser } from "@/components/auth/session-user"
 
-export type AdminCounts = { products: number; pendingPayments: number; pendingReviews: number }
+export type AdminCounts = { products: number; pendingPayments: number; pendingReviews: number; lowStock: number }
 
 export const ADMIN_LINKS: { href: string; label: string; icon: typeof Users; countKey?: keyof AdminCounts; adminOnly?: boolean }[] = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },

@@ -491,16 +491,16 @@ const REVENUE = sql`o."paidAt" IS NOT NULL AND o.status NOT IN ('CANCELLED', 'RE
 /** Timestamps are stored as UTC; days are counted in WIB. */
 const WIB_DAY = sql`((o."placedAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Jakarta')::date`
 
-async function revenueSeries() {
+async function revenueSeries(days = 30) {
   const rows = await db.$queryRaw<{ day: string; revenue: number; orders: number }[]>`
     SELECT to_char(${WIB_DAY}, 'YYYY-MM-DD') AS day, sum(o.total)::float8 AS revenue, count(*)::int AS orders
     FROM orders o
-    WHERE ${REVENUE} AND ${WIB_DAY} > (now() AT TIME ZONE 'Asia/Jakarta')::date - 30
+    WHERE ${REVENUE} AND ${WIB_DAY} > (now() AT TIME ZONE 'Asia/Jakarta')::date - ${days}::int
     GROUP BY 1`
   const byDay = new Map(rows.map((r) => [r.day, r]))
   const todayWib = new Date(Date.now() + 7 * 3_600_000)
-  return Array.from({ length: 30 }, (_, i) => {
-    const d = new Date(Date.UTC(todayWib.getUTCFullYear(), todayWib.getUTCMonth(), todayWib.getUTCDate() - (29 - i)))
+  return Array.from({ length: days }, (_, i) => {
+    const d = new Date(Date.UTC(todayWib.getUTCFullYear(), todayWib.getUTCMonth(), todayWib.getUTCDate() - (days - 1 - i)))
     const key = d.toISOString().slice(0, 10)
     const r = byDay.get(key)
     return { date: d.toISOString(), revenue: r?.revenue ?? 0, orders: r?.orders ?? 0 }
@@ -561,12 +561,13 @@ async function productRows(): Promise<AdminProductRow[]> {
   }))
 }
 
-export async function getAdminOverview() {
+/** KPIs for the last `days` compared with the `days` before; the chart shows at least 30 days. */
+export async function getAdminOverview(days = 7) {
   "use cache"
   cacheLife("minutes")
   cacheTag("admin")
   const [series, categoryRevenue, recentPayments, rows, customers] = await Promise.all([
-    revenueSeries(),
+    revenueSeries(Math.max(30, days * 2)),
     db.$queryRaw<{ name: string; revenue: number }[]>`
       SELECT c.name, coalesce(sum(oi."lineTotal") FILTER (WHERE ${REVENUE} AND ${WIB_DAY} > (now() AT TIME ZONE 'Asia/Jakarta')::date - 30), 0)::float8 AS revenue
       FROM categories c
@@ -584,8 +585,9 @@ export async function getAdminOverview() {
   ])
   const sum = (a: { revenue: number }[]) => a.reduce((n, d) => n + d.revenue, 0)
   const count = (a: { orders: number }[]) => a.reduce((n, d) => n + d.orders, 0)
-  const last7 = series.slice(-7)
-  const prev7 = series.slice(-14, -7)
+  const last7 = series.slice(-days)
+  const prev7 = series.slice(-days * 2, -days)
+  const chart = series.slice(-Math.max(30, days))
   const revenue = sum(last7)
   const orders = count(last7)
   const pct = (a: number, b: number) => (b ? ((a - b) / b) * 100 : 0)
@@ -594,12 +596,12 @@ export async function getAdminOverview() {
   const live = rows.filter((p) => p.status === "ACTIVE")
   return {
     kpis: {
-      revenue: { value: revenue, delta: pct(revenue, sum(prev7)), trend: series.slice(-12).map((d) => d.revenue) },
-      orders: { value: orders, delta: pct(orders, count(prev7)), trend: series.slice(-12).map((d) => d.orders) },
+      revenue: { value: revenue, delta: pct(revenue, sum(prev7)), trend: chart.slice(-12).map((d) => d.revenue) },
+      orders: { value: orders, delta: pct(orders, count(prev7)), trend: chart.slice(-12).map((d) => d.orders) },
       customers: { value: customers[0].total, delta: pct(customers[0].recent, customers[0].previous) },
       aov: { value: Math.round(aov), delta: pct(aov, prevAov) },
     },
-    revenueSeries: series,
+    revenueSeries: chart,
     categoryRevenue,
     recentPayments,
     lowStock: live.filter((p) => p.totalStock <= 5).sort((a, b) => a.totalStock - b.totalStock).slice(0, 5),

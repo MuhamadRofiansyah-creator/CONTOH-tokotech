@@ -79,7 +79,7 @@ export function AuthForm({ mode, googleEnabled, query }: { mode: "login" | "regi
           error={errors.password}
           extra={
             !register && (
-              <Link href="#" className="text-xs text-primary hover:underline">
+              <Link href="/forgot-password" className="text-xs text-primary hover:underline">
                 {t.auth.forgot}
               </Link>
             )

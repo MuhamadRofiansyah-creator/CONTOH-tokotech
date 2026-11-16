@@ -134,8 +134,8 @@ export async function OrderDetailView({
               <dd className="text-primary tabular-nums">{formatPrice(order.total)}</dd>
             </div>
           </dl>
-          <Button variant="outline" className="w-full">
-            {t.order.invoice}
+          <Button asChild variant="outline" className="w-full">
+            <Link href={`/invoice/${order.number}${order.guestAccessToken ? `?t=${order.guestAccessToken}` : ""}`}>{t.order.invoice}</Link>
           </Button>
         </div>
       </div>

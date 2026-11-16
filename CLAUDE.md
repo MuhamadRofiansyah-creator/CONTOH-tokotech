@@ -112,4 +112,8 @@ There are no photos. `components/product/product-art.tsx` draws SVG art per `Cat
 - Design tokens: teal `--primary`, navy `--topbar` (utility bar/footer), `--success`/`--warning`/`--destructive`, plus `--surface`. Font is Lexend (`--font-lexend`). Use `container-page` for the page gutter/max width.
 - Rofi (`u-001`, `rofi@example.com`) is the main test account (ADMIN); see Auth for the others.
 - Vouchers in the fixtures: `TOKOTECH10` (10%, max Rp 500 rb), `GRATISONGKIR` (free shipping over Rp 1 jt), `HEMAT100K` (expired).
+- Customer self-service actions live in `lib/actions/account.ts` (addresses, reviews, stock alerts, newsletter, password reset). Footer info pages are `/info/[slug]` with bilingual content in `lib/i18n/info-pages.ts`. The printable invoice is `app/[lang]/(print)/invoice/[number]`.
+- `MOCK_EMAIL_LINKS="true"` shows password-reset links on screen (self-hosted use only). `BITESHIP_ALLOW_LIVE` must be "true" before a live Biteship key is used (see `shippingMode()` in `lib/shipping.ts`).
+- Local production: `npm run local` (migrate, build, start on :3000). Never run it while `npm run dev` is running; they share `.next`.
+- Values shared by server and client code (e.g. `lib/admin-ranges.ts`) must live in plain modules: a server component can't import non-component exports from a "use client" file.
 - Fixture source files may have been saved with CRLF endings on Windows; normalize to LF before scripted edits.

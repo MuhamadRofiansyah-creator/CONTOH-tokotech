@@ -56,7 +56,14 @@ export async function currentCart({ create = false } = {}): Promise<CartRef | nu
   }
   if (!create) return null
   const newToken = randomBytes(24).toString("base64url")
-  ;(await cookies()).set(GUEST_COOKIE, newToken, { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 24 * 60 })
+  ;(await cookies()).set(GUEST_COOKIE, newToken, {
+    httpOnly: true,
+    sameSite: "lax",
+    // Secure only when the site is served over https (a local production build runs on plain http)
+    secure: (process.env.APP_URL ?? "").startsWith("https://"),
+    path: "/",
+    maxAge: 60 * 60 * 24 * 60,
+  })
   return db.cart.create({ data: { guestToken: newToken }, select: { id: true } })
 }
 

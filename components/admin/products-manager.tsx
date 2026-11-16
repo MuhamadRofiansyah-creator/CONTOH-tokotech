@@ -39,7 +39,7 @@ type Tab = "all" | ProductStatus
 export function ProductsManager({ products, categories, brands }: { products: AdminProduct[]; categories: string[]; brands: Brand[] }) {
   const action = useAdminAction()
   const params = useSearchParams()
-  const [query, setQuery] = useState("")
+  const [query, setQuery] = useState(params.get("q") ?? "")
   const [tab, setTab] = useState<Tab>("all")
   const [category, setCategory] = useState("all")
   const [stock, setStock] = useState(params.get("stock") === "low" ? "low" : "all")

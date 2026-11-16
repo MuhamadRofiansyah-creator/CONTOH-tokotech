@@ -44,25 +44,33 @@ export async function Footer() {
             title={t.footer.help}
             links={[
               ["/account/orders", t.footer.trackOrder],
-              ["#", t.footer.shippingInfo],
-              ["#", t.footer.returnsWarranty],
-              ["#", t.footer.paymentMethods],
-              ["#", t.footer.contact],
+              ["/info/shipping", t.footer.shippingInfo],
+              ["/info/returns", t.footer.returnsWarranty],
+              ["/info/payment", t.footer.paymentMethods],
+              ["/info/contact", t.footer.contact],
             ]}
           />
           <FooterCol
             title={t.footer.company}
             links={[
-              ["#", t.footer.aboutUs],
-              ["#", t.footer.careers],
-              ["#", t.footer.stores],
-              ["#", t.footer.business],
+              ["/info/about", t.footer.aboutUs],
+              ["/info/careers", t.footer.careers],
+              ["/info/stores", t.footer.stores],
+              ["/info/business", t.footer.business],
             ]}
           />
         </div>
         <div className="border-t border-white/10">
           <div className="container-page flex flex-col items-center justify-between gap-3 py-5 text-xs sm:flex-row">
-            <p>{t.footer.rights}</p>
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {t.footer.rights}
+              <Link href="/info/terms" className="hover:text-white">
+                {t.extra.terms}
+              </Link>
+              <Link href="/info/privacy" className="hover:text-white">
+                {t.extra.privacy}
+              </Link>
+            </p>
             <div className="flex items-center gap-2">
               <CreditCard className="size-4" />
               {["VISA", "Mastercard", "QRIS", "GoPay", "OVO", "BCA VA"].map((m) => (

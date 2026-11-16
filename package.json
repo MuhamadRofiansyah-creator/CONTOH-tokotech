@@ -13,7 +13,10 @@
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
     "db:reset": "prisma migrate reset --force",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "local:build": "prisma migrate deploy && next build",
+    "local:start": "next start -p 3000",
+    "local": "npm run local:build && npm run local:start"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

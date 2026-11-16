@@ -28,6 +28,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     products: products.length,
     pendingPayments: payments.filter((p) => p.status === "PENDING").length,
     pendingReviews: reviews.filter((r) => r.status === "PENDING").length,
+    lowStock: products.filter((p) => p.status === "ACTIVE" && p.totalStock <= 5).length,
   }
   return (
     <html lang="en" suppressHydrationWarning className={`${lexend.variable} ${geistMono.variable} h-full antialiased`}>

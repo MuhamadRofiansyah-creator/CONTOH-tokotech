@@ -1,14 +1,13 @@
 import Link from "@/components/i18n/link"
-import { ArrowRight, Flame, Mail } from "lucide-react"
+import { ArrowRight, Flame } from "lucide-react"
 import { getBrands, getCategories, getCollection } from "@/lib/data"
 import { HeroCarousel } from "@/components/home/hero-carousel"
+import { NewsletterForm } from "@/components/home/newsletter-form"
 import { FlashSaleTimer } from "@/components/home/flash-sale-timer"
 import { ProductRail } from "@/components/home/product-rail"
 import { ProductArt } from "@/components/product/product-art"
 import { BrandMark } from "@/components/product/primitives"
 import { SectionHeading } from "@/components/shared/empty-state"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { getDictionary } from "@/lib/i18n/dictionary"
 import { fmt } from "@/lib/i18n/config"
 
@@ -132,20 +131,7 @@ export default async function HomePage() {
               <h2 className="text-2xl font-light tracking-tight sm:text-3xl">{t.home.newsletterTitle}</h2>
               <p className="mt-2 text-sm text-white/70">{t.home.newsletterBody}</p>
             </div>
-            <form className="flex gap-2">
-              <label className="relative flex-1">
-                <span className="sr-only">{t.home.email}</span>
-                <Mail className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-white/50" />
-                <Input
-                  type="email"
-                  placeholder="you@email.com"
-                  className="h-11 border-white/15 bg-white/10 pl-9 text-white placeholder:text-white/50"
-                />
-              </label>
-              <Button type="button" size="lg" className="h-11 px-5">
-                {t.home.subscribe}
-              </Button>
-            </form>
+            <NewsletterForm />
           </div>
         </div>
       </section>

@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Bell, LogOut, Menu, Search, Settings, Store } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
@@ -18,15 +19,24 @@ import { ThemeToggle } from "@/components/layout/header-actions"
 import { AdminNav, type AdminCounts } from "./admin-nav"
 import { initials, signOutToHome, useSessionUser } from "@/components/auth/session-user"
 
-const NOTIFICATIONS = [
-  { title: "Payment PAY-908412 is pending", time: "2 min ago" },
-  { title: "Raider 18 HX AI: 1 unit left", time: "1 hour ago" },
-  { title: "New staff invite accepted", time: "Yesterday" },
-]
+/** Where a search goes: payment/order numbers → payments, emails → users, anything else → products. */
+function searchTarget(q: string) {
+  const term = q.trim()
+  if (/^(PAY|TT)-/i.test(term)) return `/admin/payments?q=${encodeURIComponent(term.toUpperCase())}`
+  if (term.includes("@")) return `/admin/users?q=${encodeURIComponent(term)}`
+  return `/admin/products?q=${encodeURIComponent(term)}`
+}
 
 export function AdminTopbar({ counts }: { counts: AdminCounts }) {
   const [open, setOpen] = useState(false)
   const { user } = useSessionUser()
+  const router = useRouter()
+  const [search, setSearch] = useState("")
+  const notifications = [
+    counts.pendingPayments > 0 && { title: `${counts.pendingPayments} payment${counts.pendingPayments === 1 ? "" : "s"} awaiting payment`, href: "/admin/payments" },
+    counts.pendingReviews > 0 && { title: `${counts.pendingReviews} review${counts.pendingReviews === 1 ? "" : "s"} waiting for moderation`, href: "/admin/reviews" },
+    counts.lowStock > 0 && { title: `${counts.lowStock} live product${counts.lowStock === 1 ? "" : "s"} with 5 or fewer left`, href: "/admin/products" },
+  ].filter(Boolean) as { title: string; href: string }[]
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur sm:px-6">
       <Sheet open={open} onOpenChange={setOpen}>
@@ -47,35 +57,48 @@ export function AdminTopbar({ counts }: { counts: AdminCounts }) {
         </SheetContent>
       </Sheet>
 
-      <label className="relative hidden max-w-md flex-1 sm:block">
+      <form
+        className="relative hidden max-w-md flex-1 sm:block"
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault()
+          if (search.trim()) router.push(searchTarget(search))
+        }}
+      >
+      <label className="block">
         <span className="sr-only">Search admin</span>
         <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
         <input
-          placeholder="Search products, payments, users…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Search products, payments (PAY-/TT-), users (email)…"
           className="h-9 w-full rounded-lg border bg-muted/50 pr-12 pl-9 text-sm outline-none placeholder:text-muted-foreground focus:border-primary focus:bg-background focus:ring-3 focus:ring-primary/15"
         />
         <kbd className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border bg-background px-1.5 text-[10px] text-muted-foreground">
-          ⌘K
+          ↵
         </kbd>
       </label>
+      </form>
 
       <div className="ml-auto flex items-center gap-1">
         <ThemeToggle />
         <DropdownMenu>
           <DropdownMenuTrigger className="relative inline-flex size-9 items-center justify-center rounded-lg hover:bg-muted">
             <Bell className="size-[18px]" />
-            <span className="absolute top-2 right-2 size-2 rounded-full bg-destructive ring-2 ring-background" />
-            <span className="sr-only">Notifications, 3 unread</span>
+            {notifications.length > 0 && <span className="absolute top-2 right-2 size-2 rounded-full bg-destructive ring-2 ring-background" />}
+            <span className="sr-only">Notifications, {notifications.length}</span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            {NOTIFICATIONS.map((n) => (
-              <DropdownMenuItem key={n.title} className="flex-col items-start gap-0.5">
-                <span className="text-sm">{n.title}</span>
-                <span className="text-xs text-muted-foreground">{n.time}</span>
+            {notifications.map((n) => (
+              <DropdownMenuItem key={n.href} asChild>
+                <Link href={n.href} className="text-sm">
+                  {n.title}
+                </Link>
               </DropdownMenuItem>
             ))}
+            {!notifications.length && <p className="px-2 py-3 text-sm text-muted-foreground">You&apos;re all caught up.</p>}
           </DropdownMenuContent>
         </DropdownMenu>
         <span className="mx-1 h-6 w-px bg-border" />
@@ -95,8 +118,10 @@ export function AdminTopbar({ counts }: { counts: AdminCounts }) {
                 <Store /> View store
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Settings /> Settings
+            <DropdownMenuItem asChild>
+              <Link href="/account">
+                <Settings /> My account
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => signOutToHome()}>

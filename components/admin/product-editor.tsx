@@ -1,5 +1,7 @@
 "use client"
 
+import { toast } from "sonner"
+import { useState } from "react"
 import { ImagePlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,6 +31,7 @@ export function ProductEditor({
 }) {
   const isNew = !product
   const action = useAdminAction()
+  const [previews, setPreviews] = useState<string[]>([])
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -55,15 +58,31 @@ export function ProductEditor({
                 [0, 1, 2].map((v) => (
                   <ProductImage key={v} product={{ id: product.id, accent: product.accent, category: { art: product.art } }} colorHex={product.colorHex} variant={v} className="aspect-square rounded-lg" />
                 ))}
-              <button
-                type="button"
-                className="flex aspect-square flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary"
-              >
+              {previews.map((src) => (
+                // Local preview only (object URL); nothing is uploaded
+                // eslint-disable-next-line @next/next/no-img-element
+                <img key={src} src={src} alt="" className="aspect-square rounded-lg object-cover ring-1 ring-border" />
+              ))}
+              <label className="flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed text-xs text-muted-foreground transition-colors hover:border-primary hover:text-primary">
                 <ImagePlus className="size-5" />
                 Upload
-              </button>
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  multiple
+                  className="sr-only"
+                  onChange={(e) => {
+                    const files = [...(e.target.files ?? [])].slice(0, 8)
+                    setPreviews((p) => [...p, ...files.map((file) => URL.createObjectURL(file))])
+                    if (files.length) toast("Preview only: saving photos needs file storage, so the store keeps the generated art for now.")
+                    e.target.value = ""
+                  }}
+                />
+              </label>
             </div>
-            <p className="text-xs text-muted-foreground">PNG or JPG up to 5 MB. The first image is the cover.</p>
+            <p className="text-xs text-muted-foreground">
+              {previews.length ? "Preview only: photos aren't saved yet (no file storage configured)." : "PNG or JPG up to 5 MB. The first image is the cover."}
+            </p>
           </section>
 
           <Separator />

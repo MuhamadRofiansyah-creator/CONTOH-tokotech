@@ -91,6 +91,10 @@ export function sendStaffInvite(email: string, role: string, token: string) {
   return send(email, "You're invited to the TokoTech admin", layout("Join the TokoTech team", `<p>You've been invited as <b>${esc(role.toLowerCase())}</b>. Create your account to get started.</p>${button(url, "Accept invite")}`))
 }
 
+export function sendPasswordReset(email: string, url: string) {
+  return send(email, "Reset your TokoTech password", layout("Reset your password", `<p>Someone asked to reset the password for this account. The link works for 1 hour.</p>${button(url, "Choose a new password")}<p style="font-size:13px;color:#64748b">If it wasn't you, ignore this email; your password stays the same.</p>`))
+}
+
 export function sendBackInStock(email: string, productName: string, slug: string) {
   return send(email, `${productName} is back in stock`, layout("Back in stock", `<p><b>${esc(productName)}</b> is available again.</p>${button(`${appUrl()}/p/${slug}`, "Shop now")}`))
 }

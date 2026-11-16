@@ -20,6 +20,20 @@ The app needs PostgreSQL running (also for `npm run build`, which prerenders fro
 
 **Mock mode:** with no `MIDTRANS_SERVER_KEY`, checkout sends you to `/checkout/pay/<payment>` where you choose "Pay" or "Fail". With no `BITESHIP_API_KEY`, courier rates and waybills are simulated. With no `RESEND_API_KEY`, emails are printed in the server log. Add the keys to `.env` to switch each one to the real service (see `.env.example`).
 
+### Run it for yourself (local production)
+
+Stop `npm run dev` first (it shares the `.next` folder), then:
+
+```bash
+npm run local        # apply migrations, build, and serve on http://localhost:3000
+# later, without rebuilding:
+npm run local:start
+```
+
+Rebuild (`npm run local`) after pulling or changing code. To open the shop from another device on your Wi-Fi, set `APP_URL` to `http://<your-PC-IP>:3000`.
+
+With `MOCK_EMAIL_LINKS="true"` in `.env`, the password-reset page shows the reset link on screen (handy when email can't reach your inbox). Turn it off before putting the site on the internet.
+
 ### Database
 
 ```bash

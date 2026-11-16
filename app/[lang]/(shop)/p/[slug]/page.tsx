@@ -17,9 +17,9 @@ import { ProductCard } from "@/components/product/product-card"
 import { ProductImage } from "@/components/product/product-image"
 import { Rating } from "@/components/product/primitives"
 import { BundleAddButton } from "@/components/product/bundle-add-button"
+import { WriteReviewButton } from "@/components/product/write-review"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Button } from "@/components/ui/button"
 import { getDictionary, getLocale } from "@/lib/i18n/dictionary"
 import { fmt } from "@/lib/i18n/config"
 
@@ -115,9 +115,7 @@ export default async function ProductPage({ params }: PageProps<"/[lang]/p/[slug
                 </li>
               ))}
             </ul>
-            <Button variant="outline" className="mt-6 w-full">
-              {t.product.writeReview}
-            </Button>
+            <WriteReviewButton productId={product.id} productName={product.name} slug={product.slug} />
           </div>
           <ul className="divide-y">
             {reviews.length === 0 && (

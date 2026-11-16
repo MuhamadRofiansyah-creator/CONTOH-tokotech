@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Ban, Mail, MoreHorizontal, ShieldCheck, UserPlus, UserRound } from "lucide-react"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -55,7 +56,8 @@ export function UsersManager({ users }: { users: AdminUser[] }) {
   const me = useSessionUser().user?.id
   const [tab, setTab] = useState<Tab>("all")
   const [status, setStatus] = useState("all")
-  const [query, setQuery] = useState("")
+  const initialQuery = useSearchParams().get("q") ?? ""
+  const [query, setQuery] = useState(initialQuery)
   const [page, setPage] = useState(1)
   const [invite, setInvite] = useState(false)
 

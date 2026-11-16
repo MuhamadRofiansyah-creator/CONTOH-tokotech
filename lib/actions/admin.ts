@@ -8,7 +8,7 @@ import { requireStaff, type SessionUser } from "@/lib/auth/session"
 import { syncTotalStock } from "@/lib/orders/settle"
 import { bookShipment } from "@/lib/shipping"
 import { midtransEnabled, refundTransaction } from "@/lib/payments/midtrans"
-import { sendShipped, sendStaffInvite } from "@/lib/email"
+import { sendBackInStock, sendShipped, sendStaffInvite } from "@/lib/email"
 import { courierLabel } from "@/lib/format"
 import type { ProductStatus, Role, VoucherType } from "@/lib/types"
 
@@ -116,11 +116,25 @@ export async function saveProductAction(productId: string | null, form: FormData
     if (before.status !== status) changes.status = [before.status, status]
     if (delta) changes.stock = [v.stock, newOnHand]
     await audit(actor, "product.update", "Product", productId, changes)
+    if (before.totalStock === 0 && stock > 0) await notifyBackInStock(productId)
     refresh("catalog", `product:${before.slug}`)
     return ok("Changes saved")
   } catch (e) {
     console.error(e)
     return fail("Couldn't save the product")
+  }
+}
+
+/** Email everyone waiting for this product, once. */
+async function notifyBackInStock(productId: string) {
+  const alerts = await db.stockAlert.findMany({
+    where: { productId, notifiedAt: null },
+    include: { user: { select: { email: true } }, product: { select: { name: true, slug: true, status: true } } },
+  })
+  for (const a of alerts) {
+    if (a.product.status !== "ACTIVE") continue
+    await sendBackInStock(a.user.email, a.product.name, a.product.slug)
+    await db.stockAlert.update({ where: { id: a.id }, data: { notifiedAt: new Date() } })
   }
 }
 

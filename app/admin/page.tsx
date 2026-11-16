@@ -3,13 +3,14 @@ import { Suspense } from "react"
 import { requireStaff } from "@/lib/auth/session"
 import { AdminSkeleton } from "@/components/admin/admin-skeleton"
 import Link from "next/link"
-import { ArrowDownRight, ArrowRight, ArrowUpRight, Download, Minus, Plus } from "lucide-react"
+import { ArrowDownRight, ArrowRight, ArrowUpRight, Minus, Plus } from "lucide-react"
 import { getAdminOverview } from "@/lib/data"
 import { compactIDR, formatPrice, providerLabel } from "@/lib/format"
 import { Button } from "@/components/ui/button"
 import { CategoryBars, ChartTable, RevenueChart, Sparkline } from "@/components/admin/charts"
 import { PageHeader, StatusBadge } from "@/components/admin/status-badge"
-import { DateRangeSelect } from "@/components/admin/date-range-select"
+import { DashboardRangeSelect, ExportCsvButton } from "@/components/admin/date-range-select"
+import { RANGES, rangeDays } from "@/lib/admin-ranges"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = { title: "Dashboard" }
@@ -20,17 +21,20 @@ const timeAgo = (iso: string) => {
   return h < 1 ? "Just now" : h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ searchParams }: PageProps<"/admin">) {
   return (
     <Suspense fallback={<AdminSkeleton />}>
-      <DashboardContent />
+      <DashboardContent searchParams={searchParams} />
     </Suspense>
   )
 }
 
-async function DashboardContent() {
-  await requireStaff({ next: "/admin" })
-  const o = await getAdminOverview()
+async function DashboardContent({ searchParams }: Pick<PageProps<"/admin">, "searchParams">) {
+  const user = await requireStaff({ next: "/admin" })
+  const sp = await searchParams
+  const range = typeof sp.range === "string" && RANGES.some((r) => r.value === sp.range) ? sp.range : "7d"
+  const days = rangeDays(range)
+  const o = await getAdminOverview(days)
   const kpis = [
     { label: "Revenue", value: compactIDR(o.kpis.revenue.value), full: formatPrice(o.kpis.revenue.value), delta: o.kpis.revenue.delta, trend: o.kpis.revenue.trend },
     { label: "Orders", value: o.kpis.orders.value.toLocaleString("id-ID"), delta: o.kpis.orders.delta, trend: o.kpis.orders.trend },
@@ -42,12 +46,13 @@ async function DashboardContent() {
     <>
       <PageHeader
         title="Dashboard"
-        description="Welcome back, Rofi. Here's how the store is doing."
+        description={`Welcome back, ${user.name?.split(" ")[0] ?? "there"}. Here's how the store is doing.`}
         actions={
           <>
-            <Button variant="outline" className="h-9">
-              <Download /> Export
-            </Button>
+            <ExportCsvButton
+              filename={`revenue-${range}.csv`}
+              rows={o.revenueSeries.map((d) => ({ date: d.date.slice(0, 10), orders: d.orders, revenue_idr: d.revenue }))}
+            />
             <Button asChild className="h-9">
               <Link href="/admin/products?new=1">
                 <Plus /> Add product
@@ -59,8 +64,8 @@ async function DashboardContent() {
 
       {/* One filter row above everything it scopes */}
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <DateRangeSelect />
-        <span className="text-xs text-muted-foreground">Compared with the previous 7 days</span>
+        <DashboardRangeSelect value={range} />
+        <span className="text-xs text-muted-foreground">{days === 1 ? "Compared with yesterday" : `Compared with the previous ${days} days`}</span>
       </div>
 
       <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -83,7 +88,7 @@ async function DashboardContent() {
                   {flat ? <Minus className="size-3.5" /> : up ? <ArrowUpRight className="size-3.5" /> : <ArrowDownRight className="size-3.5" />}
                   {flat ? "0.0" : `${up ? "+" : ""}${k.delta.toFixed(1)}`}%
                 </span>
-                <span className="text-muted-foreground">vs last week</span>
+                <span className="text-muted-foreground">{days === 1 ? "vs yesterday" : `vs previous ${days} days`}</span>
               </p>
             </li>
           )

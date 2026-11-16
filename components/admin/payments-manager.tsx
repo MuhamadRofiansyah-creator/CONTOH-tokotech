@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { downloadCsv, useAdminAction } from "./use-admin-action"
 import { markDeliveredAction, refundPaymentAction, shipOrderAction } from "@/lib/actions/admin"
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils"
 import { StatusBadge } from "./status-badge"
 import { SegmentedTabs, TablePagination, TableSearch } from "./data-table-parts"
 import { DateRangeSelect } from "./date-range-select"
+import { rangeDays } from "@/lib/admin-ranges"
 
 
 const PER_PAGE = 12
@@ -33,8 +35,13 @@ type Tab = "all" | PaymentStatus
 
 export function PaymentsManager({ payments }: { payments: Payment[] }) {
   const [tab, setTab] = useState<Tab>("all")
+  const [range, setRange] = useState("30d")
+  // Range is relative to the newest payment, so the filter is stable during render
+  const newest = payments.reduce((n, p) => Math.max(n, Date.parse(p.createdAt)), 0)
+  const inRange = (p: Payment) => Date.parse(p.createdAt) > newest - rangeDays(range) * 86_400_000
   const [method, setMethod] = useState("all")
-  const [query, setQuery] = useState("")
+  const initialQuery = useSearchParams().get("q") ?? ""
+  const [query, setQuery] = useState(initialQuery)
   const [page, setPage] = useState(1)
   const [open, setOpen] = useState<Payment | null>(null)
 
@@ -51,11 +58,13 @@ export function PaymentsManager({ payments }: { payments: Payment[] }) {
     const q = query.trim().toLowerCase()
     return payments.filter(
       (p) =>
+        inRange(p) &&
         (tab === "all" || p.status === tab) &&
         (method === "all" || p.method === method) &&
         (!q || [p.number, p.orderNumber, p.customer, p.email].some((s) => s.toLowerCase().includes(q))),
     )
-  }, [payments, tab, method, query])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payments, tab, method, query, range])
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
   const current = Math.min(page, pageCount)
@@ -83,7 +92,7 @@ export function PaymentsManager({ payments }: { payments: Payment[] }) {
       </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-2">
-        <DateRangeSelect defaultValue="30d" />
+        <DateRangeSelect value={range} onChange={(v) => { setRange(v); setPage(1) }} />
         <Select value={method} onValueChange={(v) => { setMethod(v); setPage(1) }}>
           <SelectTrigger className="h-9! min-w-40 bg-background" aria-label="Payment method">
             <SelectValue />

@@ -28,7 +28,6 @@ import {
 import { useCartCount, useMounted, useWishlist } from "@/stores"
 import { cn } from "@/lib/utils"
 import { initials, signOutToHome, useSessionUser } from "@/components/auth/session-user"
-import { usePathname } from "next/navigation"
 import { useDict, useLocale } from "@/components/i18n/provider"
 import { fmt, localizePath, stripLocale, type Locale } from "@/lib/i18n/config"
 
@@ -104,12 +103,13 @@ function Flag({ code }: { code: string }) {
 export function LanguageSwitcher({ compact }: { compact?: boolean }) {
   const t = useDict()
   const lang = useLocale()
-  const pathname = usePathname()
   // Each language has its own root layout (<html lang>), so switching is a full page load,
   // the same thing Next.js does when a navigation changes the root layout.
   const switchTo = (next: string) => {
     if (next === lang) return
-    window.location.href = localizePath(stripLocale(pathname) + window.location.search + window.location.hash, next as Locale)
+    // Read the path at click time: usePathname() would make every page's header request-time data
+    const { pathname, search, hash } = window.location
+    window.location.href = localizePath(stripLocale(pathname) + search + hash, next as Locale)
   }
   return (
     <DropdownMenu>

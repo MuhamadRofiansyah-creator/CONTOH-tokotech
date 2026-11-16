@@ -6,7 +6,7 @@ export async function TopBar() {
   return (
     <div className="bg-topbar text-[11px] text-topbar-foreground">
       <div className="container-page flex h-8 items-center justify-between gap-4">
-        <button type="button" className="inline-flex items-center gap-1.5 hover:text-white">
+        <span className="inline-flex items-center gap-1.5">
           <MapPin className="size-3.5" />
           {t.topbar.shipTo} <span className="font-medium text-white">{t.topbar.indonesia}</span>
           <span aria-hidden className="ml-0.5 inline-block h-2.5 w-3.5 overflow-hidden rounded-[2px] ring-1 ring-white/20">
@@ -14,7 +14,7 @@ export async function TopBar() {
             <span className="block h-1/2 bg-white" />
           </span>
           <ChevronDown className="size-3" />
-        </button>
+        </span>
         <ul className="hidden items-center gap-5 md:flex">
           <li className="inline-flex items-center gap-1.5">
             <Truck className="size-3.5" /> {t.topbar.freeShipping}
