@@ -1,6 +1,9 @@
 # TokoTech
 
 E-commerce storefront for computer products (PCs, laptops, monitors, keyboards, mouse, headsets, components).
+
+Repository layout: the Next.js app lives in `web/` (paths below are relative to it), API documentation in `api/`, and project documents in `dokumentasi/`. `docker-compose.yml` stays in the root.
+
 See [docs/PLAN.md](./docs/PLAN.md) for the full plan and [docs/DATA-MODEL.md](./docs/DATA-MODEL.md) for the data model.
 
 **Status:** storefront (English at `/`, Bahasa Indonesia at `/id`), admin, database, sign-in, cart, checkout, payments, shipping and emails are built. Without service keys in `.env`, payments, shipping and email run in mock mode (see below).
@@ -8,6 +11,7 @@ See [docs/PLAN.md](./docs/PLAN.md) for the full plan and [docs/DATA-MODEL.md](./
 ## Run
 
 ```bash
+cd web
 npm install
 npm run dev      # http://localhost:3000
 npm run build    # production build
@@ -25,6 +29,7 @@ The app needs PostgreSQL running (also for `npm run build`, which prerenders fro
 Stop `npm run dev` first (it shares the `.next` folder), then:
 
 ```bash
+cd web
 npm run local        # apply migrations, build, and serve on http://localhost:3000
 # later, without rebuilding:
 npm run local:start
@@ -37,6 +42,7 @@ With `MOCK_EMAIL_LINKS="true"` in `.env`, the password-reset page shows the rese
 ### Database
 
 ```bash
+cd web
 cp .env.example .env   # set DATABASE_URL (local Postgres, or `docker compose up -d`)
 npm run db:deploy      # apply migrations
 npm run db:seed        # load the fixtures (repeatable)

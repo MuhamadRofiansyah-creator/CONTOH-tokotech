@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-@AGENTS.md
+@web/AGENTS.md
 
 ## Project status
 
@@ -23,6 +23,7 @@ Schema changes: edit `prisma/schema.prisma`, run `npm run db:migrate` (use `-- -
 ## Commands
 
 ```bash
+cd web               # all app commands run from web/
 npm run dev          # dev server on http://localhost:3000 (Turbopack)
 npm run build        # production build; also the strictest check (see Cache Components below)
 npm run lint         # ESLint (flat config; `next lint` no longer exists in Next 16)
