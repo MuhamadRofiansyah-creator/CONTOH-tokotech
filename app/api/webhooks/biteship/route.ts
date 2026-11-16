@@ -1,12 +1,13 @@
 import { revalidateTag } from "next/cache"
 import { db } from "@/lib/db"
-import { mapBiteshipStatus } from "@/lib/shipping"
+import { mapBiteshipStatus, shippingMode } from "@/lib/shipping"
 import { sendShipped } from "@/lib/email"
 import { courierLabel } from "@/lib/format"
 
 // POST /api/webhooks/biteship?secret=<BITESHIP_WEBHOOK_SECRET>: order status updates.
 // Register it in the Biteship dashboard with the secret in the query string.
 export async function POST(request: Request) {
+  if (shippingMode() !== "biteship") return Response.json({ ok: false, error: "shipping is in mock mode" }, { status: 503 })
   const secret = process.env.BITESHIP_WEBHOOK_SECRET
   if (!secret || new URL(request.url).searchParams.get("secret") !== secret) return Response.json({ ok: false }, { status: 401 })
   const body = await request.json().catch(() => null)

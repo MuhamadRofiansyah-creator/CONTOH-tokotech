@@ -1,8 +1,13 @@
 import "server-only"
 
 // Courier rates and bookings through Biteship (https://biteship.com/id/docs).
-// Without BITESHIP_API_KEY every call falls back to a deterministic mock, so
-// checkout and admin flows work in development.
+//
+// Safety: Biteship is only contacted when shippingMode() === "biteship":
+//   - BITESHIP_API_KEY empty/blank        → mock rates + mock waybills, no network calls
+//   - live key (biteship_live…)          → still mock, unless BITESHIP_ALLOW_LIVE="true"
+//     (live rate lookups cost money and live bookings dispatch real couriers)
+//   - testing key, or live + allowed      → real Biteship
+// The low-level request helper re-checks the mode, so no code path can call Biteship by accident.
 
 export type ShippingRate = {
   /** "<courier>:<service>", e.g. "jne:reg" */
@@ -33,7 +38,24 @@ const COURIERS = "jne,sicepat,jnt,anteraja,gojek"
 const ORIGIN_POSTAL = process.env.WAREHOUSE_POSTAL_CODE ?? "12190"
 const ORIGIN_COORDS = { latitude: -6.2146, longitude: 106.8213 }
 
-export const shippingProvider = () => (process.env.BITESHIP_API_KEY ? "biteship" : "mock")
+const biteshipKey = () => (process.env.BITESHIP_API_KEY ?? "").trim()
+let warnedLive = false
+
+export function shippingMode(): "mock" | "biteship" {
+  const key = biteshipKey()
+  if (!key) return "mock"
+  if (key.startsWith("biteship_live") && process.env.BITESHIP_ALLOW_LIVE !== "true") {
+    if (!warnedLive) {
+      console.warn('[shipping] Live Biteship key ignored: set BITESHIP_ALLOW_LIVE="true" to use it. Using mock rates and waybills.')
+      warnedLive = true
+    }
+    return "mock"
+  }
+  return "biteship"
+}
+
+/** @deprecated use shippingMode() */
+export const shippingProvider = shippingMode
 
 /** Billed weight: max(actual, volumetric at 6000 cm³/kg), in grams. */
 export function billedWeight(items: ParcelItem[]) {
@@ -43,9 +65,11 @@ export function billedWeight(items: ParcelItem[]) {
 }
 
 async function biteship<T>(path: string, body: unknown): Promise<T> {
+  // Second guard: never send a request unless the mode explicitly allows it
+  if (shippingMode() !== "biteship") throw new Error("Biteship is disabled (mock mode)")
   const res = await fetch(`${API}${path}`, {
     method: "POST",
-    headers: { Authorization: process.env.BITESHIP_API_KEY!, "Content-Type": "application/json" },
+    headers: { Authorization: biteshipKey(), "Content-Type": "application/json" },
     body: JSON.stringify(body),
     cache: "no-store",
   })
@@ -78,7 +102,7 @@ type BiteshipRates = {
 }
 
 export async function quoteRates(dest: Destination, items: ParcelItem[]): Promise<ShippingRate[]> {
-  if (!process.env.BITESHIP_API_KEY) return mockRates(dest, items)
+  if (shippingMode() !== "biteship") return mockRates(dest, items)
   try {
     const instant = dest.latitude != null && dest.longitude != null
     const data = await biteship<BiteshipRates>("/v1/rates/couriers", {
@@ -124,7 +148,7 @@ export async function bookShipment(input: {
   recipient: { name: string; phone: string; address: string; postalCode: string; latitude?: number | null; longitude?: number | null; note?: string | null }
   items: ParcelItem[]
 }): Promise<BookedShipment> {
-  if (!process.env.BITESHIP_API_KEY) {
+  if (shippingMode() !== "biteship") {
     const n = [...input.orderNumber].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7)
     return { externalId: `mock_${input.orderNumber}`, trackingNumber: `${input.courier.toUpperCase().slice(0, 2)}${String(n).padStart(10, "0").slice(0, 10)}`, provider: "mock" }
   }
